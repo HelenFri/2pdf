@@ -1,6 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 from xhtml2pdf import pisa
-
+import os.path
 
 app = Flask(__name__)
 
@@ -19,7 +19,10 @@ def query():
 
     pisa.showLogging()
     convert_html_to_pdf(html_code, output_filename)
-    return 'Done'
+
+    with open(os.path.abspath(output_filename), 'rb') as f:
+        pdf_data = f.read()
+    return Response(pdf_data, mimetype='application/pdf')
 
 
 if __name__ == '__main__':

@@ -1,29 +1,37 @@
-from flask import Flask, request, Response
-from xhtml2pdf import pisa
+from flask import Flask, request, Response, render_template
 import os.path
+import pdfkit
+
 
 app = Flask(__name__)
 
 
-@app.route('/', methods=['POST'])
-def query():
-    html_code = request.get_data().decode('UTF-8')
-    output_filename = "test.pdf"
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-    def convert_html_to_pdf(html_code, output_filename):
 
-        with open(output_filename, "w+b") as res_file:
-            pisa_status = pisa.CreatePDF(html_code, dest=res_file)
+@app.route('/to_pdf', methods=['POST'])
+def query_to_pdf():
+    root_dir = os.getcwd()
+    subfolder_dir = root_dir + '/to_pdf'
 
-        return pisa_status.err
+    if request.method == 'POST':
+        html_code = request.get_data().decode('UTF-8')
 
-    pisa.showLogging()
-    convert_html_to_pdf(html_code, output_filename)
+        with open(os.path.join(subfolder_dir, 'temp.html'), 'w', encoding='utf-8') as file:
+            file.write(html_code)
 
-    with open(os.path.abspath(output_filename), 'rb') as f:
+    path = os.path.join(subfolder_dir, 'temp.html')
+
+    config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+    pdfkit.from_file(path, os.path.join(subfolder_dir, 'res_pdf.pdf'), configuration=config)
+
+    with open(os.path.join(subfolder_dir, 'res_pdf.pdf'), 'rb') as f:
         pdf_data = f.read()
     return Response(pdf_data, mimetype='application/pdf')
 
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000)
+    app.run(debug=True, port=5000)
+
